@@ -56,7 +56,12 @@ export default function Hall() {
   const bookOf = (id) => books.find((b) => b.id === id);
   const counts = useMemo(() => { const c = {}; for (const r of reviews) if (!r.hidden && r.bookId) c[r.bookId] = (c[r.bookId] || 0) + 1; return c; }, [reviews]);
   const items = useMemo(() => [
-    ...shownBooks.map((b) => ({ ...b, kind: "b", w: Math.round(size * 1.05), h: Math.round(size * 1.45) })),
+    ...shownBooks.map((b) => {
+      // 표지 모양(정사각·세로·가로)대로 띄워 표지가 잘리지 않게 (예전 책은 세로 3:4)
+      const r = Math.min(1.4, Math.max(0.6, b.coverRatio || 0.72));
+      const w = Math.round(size * (r >= 1 ? 1.3 : 1.05));
+      return { ...b, kind: "b", w, h: Math.round(w / r + 22) };
+    }),
     ...groups.slice(0, 40).map((g) => ({ ...g, id: `rv-${g.key}`, kind: "r", auto: true })),
   ], [shownBooks, groups, size]);
 

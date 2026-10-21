@@ -8,7 +8,7 @@ import { loadSpace, loadItems, setItemHidden, sha256, addItem, updateItem, uploa
 async function toJpeg(canvas) { return new Promise((ok) => canvas.toBlob(ok, "image/jpeg", 0.86)); }
 async function filesToPages(code, files, onProgress) {
   const folder = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-  const urls = []; let ratio = 0.75;
+  const urls = []; let ratio = 0.75, coverRatio = 0.75;
   const pdf = files.find((f) => /pdf$/i.test(f.type) || /[.]pdf$/i.test(f.name));
   if (pdf) {
     const pdfjs = await import("pdfjs-dist/build/pdf.mjs");
@@ -19,6 +19,7 @@ async function filesToPages(code, files, onProgress) {
       const page = await doc.getPage(i);
       const base = page.getViewport({ scale: 1 });
       if (i === 2 || doc.numPages === 1) ratio = base.width / base.height;
+      if (i === 1) coverRatio = base.width / base.height;
       const vp = page.getViewport({ scale: 1400 / Math.max(base.width, base.height) });
       const c = document.createElement("canvas"); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
       const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
@@ -32,13 +33,14 @@ async function filesToPages(code, files, onProgress) {
       const bmp = await createImageBitmap(imgs[i]);
       const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
       if (i === Math.min(1, imgs.length - 1)) ratio = bmp.width / bmp.height;
+      if (i === 0) coverRatio = bmp.width / bmp.height;
       const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
       const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(bmp, 0, 0, c.width, c.height);
       urls.push(await uploadBookPage(code, folder, i, await toJpeg(c)));
     }
   }
   // 쪽 그림 한 장이 이미 두 쪽 펼침(가로가 훨씬 긴 것)이면 넘겨 볼 때 한 장씩
-  return { urls, spread: ratio > 1.3 };
+  return { urls, spread: ratio > 1.3, coverRatio: Math.round(coverRatio * 100) / 100 };
 }
 
 const isAudio = (f) => f && (/^audio[/]/.test(f.type) || /[.](mp3|m4a|wav|aac|ogg)$/i.test(f.name));
@@ -107,12 +109,12 @@ export default function Admin() {
     if (bSong && !isAudio(bSong)) return setBMsg("동요 파일은 mp3·m4a·wav 같은 소리 파일이어야 해요.");
     setBusy(true); setBMsg("파일을 읽는 중…");
     try {
-      const { urls, spread } = await filesToPages(code, bFiles, setBMsg);
+      const { urls, spread, coverRatio } = await filesToPages(code, bFiles, setBMsg);
       if (!urls.length) throw new Error("쪽을 하나도 못 읽었어요. PDF나 JPG·PNG 그림인지 확인해 주세요.");
       let song = "", songName = "";
       if (bSong) { setBMsg("동요를 올리는 중…"); song = await uploadSong(code, bSong); songName = songTitle(bSong); }
       const order = books.length ? Math.max(...books.map((b) => b.order ?? 0)) + 1 : 0;
-      const b = await addItem("b", code, { title: bTitle.trim().slice(0, 40), by: bBy.trim().slice(0, 40), pages: urls, cover: urls[0], spread, order, song, songName });
+      const b = await addItem("b", code, { title: bTitle.trim().slice(0, 40), by: bBy.trim().slice(0, 40), pages: urls, cover: urls[0], spread, coverRatio, order, song, songName });
       setBooks((prev) => [...prev, b]);
       setBTitle(""); setBBy(""); setBFiles([]); setBSong(null); setFileKey((k) => k + 1);
       setBMsg(`『${b.title}』 ${urls.length}쪽${song ? " + 동요" : ""}를 전시했어요 ✅ 전시장에 바로 떠다녀요.`);

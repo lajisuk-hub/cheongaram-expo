@@ -4,3 +4,5 @@ node_modules
 .vercel
 npm.log
 public/_test
+
+.vercel

@@ -452,3 +452,4 @@ iframe.play-video { border: 0; }
 .filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .filebtn.off { opacity: .45; pointer-events: none; }
 @media (min-aspect-ratio: 4/3) { .entry-bg { object-position: 50% 60%; } }
+.shelf-book img { aspect-ratio: auto; max-height: 220px; object-fit: contain; background: #f4efe6; }
