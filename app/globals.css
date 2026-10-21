@@ -454,4 +454,4 @@ iframe.play-video { border: 0; }
 @media (min-aspect-ratio: 4/3) { .entry-bg { object-position: 50% 60%; } }
 .shelf-book img { aspect-ratio: auto; max-height: 220px; object-fit: contain; background: #f4efe6; }
 .bv-head strong { word-break: keep-all; }
-@media (max-width: 480px) { .bv-head strong { display: block; font-size: 17px; margin-right: 0; } .bv-head span { display: block; } }
+@media (max-width: 480px) { .bv-head strong { display: block; font-size: 17px; margin-right: 0; } .bv-head > div > span { display: block; } }
