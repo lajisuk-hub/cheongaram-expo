@@ -1,3 +1,4 @@
+import "page-flip/src/Style/stPageFlip.css";
 import "./globals.css";
 
 export const metadata = {
